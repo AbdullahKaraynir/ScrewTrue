@@ -1,0 +1,6 @@
+@echo off
+REM Backend başlatma scripti
+echo ScrewTrue Backend başlatılıyor...
+py -m uvicorn main:app --host 0.0.0.0 --port 8000
+pause
+
