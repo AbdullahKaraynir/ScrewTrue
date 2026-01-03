@@ -1,28 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Dimensions, SafeAreaView, StatusBar, Animated, Easing } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert, Dimensions, SafeAreaView, StatusBar, Animated, Easing, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import Constants from 'expo-constants';
 
-// API URL yapılandırması
-// Development: localhost kullan, Production: extra.apiUrl kullan
+const isWeb = Platform.OS === 'web';
+
+// API URL configuration
+// Development: use localhost, Production: use extra.apiUrl
 const getApiUrl = () => {
-  // Expo Go veya development modunda localhost kullan
+  // Use localhost in Expo Go or development mode
   if (__DEV__) {
     const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost || Constants.manifest?.debuggerHost;
     const localhost = debuggerHost?.split(':')[0] || 'localhost';
     return `http://${localhost}:8000`;
   }
   
-  // Production: app.json'daki extra.apiUrl kullan
+  // Production: use extra.apiUrl from app.json
   const apiUrl = Constants.expoConfig?.extra?.apiUrl || Constants.manifest?.extra?.apiUrl;
   if (apiUrl && apiUrl !== 'https://your-api-url.herokuapp.com') {
     return apiUrl;
   }
   
-  // Fallback: localhost (development için)
+  // Fallback: localhost (for development)
   return Constants.expoConfig?.extra?.apiUrlLocal || 'http://localhost:8000';
 };
 
@@ -34,18 +36,18 @@ const isSmallDevice = SCREEN_WIDTH < 375;
 const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 414;
 const scale = (size) => (SCREEN_WIDTH / 375) * size;
 
-// Profesyonel ve ayırt edici renkler
+// Professional and distinctive colors
 const CLASS_COLORS = {
-  phillips: '#E74C3C',           // Kırmızı
-  pozidriv: '#3498DB',           // Mavi
-  torx: '#F39C12',               // Turuncu
-  hex_allen: '#9B59B6',          // Mor
-  slotted: '#1ABC9C',            // Turkuaz
-  security_torx: '#E67E22',      // Turuncu-kahve
-  pentalobe: '#34495E',          // Koyu gri
-  tri_wing: '#16A085',           // Yeşil-turkuaz
-  spanner: '#C0392B',            // Koyu kırmızı
-  triangle: '#27AE60',           // Yeşil
+  phillips: '#E74C3C',           // Red
+  pozidriv: '#3498DB',           // Blue
+  torx: '#F39C12',               // Orange
+  hex_allen: '#9B59B6',          // Purple
+  slotted: '#1ABC9C',            // Turquoise
+  security_torx: '#E67E22',      // Orange-brown
+  pentalobe: '#34495E',          // Dark gray
+  tri_wing: '#16A085',           // Green-turquoise
+  spanner: '#C0392B',            // Dark red
+  triangle: '#27AE60',           // Green
 };
 
 const CLASS_LABELS = {
@@ -95,6 +97,9 @@ let isDetectingRef = { current: false };
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraActive, setIsCameraActive] = useState(false);
+  
+  // Web platform check
+  const canUseCamera = !isWeb;
   const [capturedImage, setCapturedImage] = useState(null);
   const [detections, setDetections] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -106,15 +111,15 @@ export default function App() {
   const detectionIntervalRef = useRef(null);
   isDetectingRef = useRef(false);
 
-  // API URL'ini logla ve bağlantıyı test et
+  // Log API URL and test connection
   useEffect(() => {
     console.log('ScrewTrue - API URL:', API_URL);
-    // API bağlantısını test et (opsiyonel, hata vermemeli)
+    // Test API connection (optional, should not throw errors)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     fetch(API_URL + '/health', { method: 'GET', signal: controller.signal })
-      .then(() => console.log('✓ API bağlantısı başarılı'))
-      .catch(() => console.warn('⚠ API bağlantısı test edilemedi - backend çalışmıyor olabilir'))
+      .then(() => console.log('✓ API connection successful'))
+      .catch(() => console.warn('⚠ API connection test failed - backend may not be running'))
       .finally(() => clearTimeout(timeoutId));
   }, []);
 
@@ -127,7 +132,7 @@ export default function App() {
   const slideUpAnim = useRef(new Animated.Value(50)).current;
   const resultCardAnims = useRef([]).current;
 
-  // Pulse efekti - tespit sırasında
+  // Pulse effect - during detection
   useEffect(() => {
     if (isDetecting) {
       const pulse = Animated.loop(
@@ -141,7 +146,7 @@ export default function App() {
     }
   }, [isDetecting]);
 
-  // Scan line animasyonu - kamera aktifken
+  // Scan line animation - when camera is active
   useEffect(() => {
     if (isCameraActive) {
       const scanAnimation = Animated.loop(
@@ -168,7 +173,7 @@ export default function App() {
     }
   }, [isCameraActive]);
 
-  // Loading dönen animasyon
+  // Loading rotation animation
   useEffect(() => {
     if (isLoading) {
       const rotateAnimation = Animated.loop(
@@ -181,7 +186,7 @@ export default function App() {
     }
   }, [isLoading]);
 
-  // Sonuç kartları animasyonu
+  // Result cards animation
   useEffect(() => {
     if (capturedImage && detections.length > 0) {
       // Reset animations
@@ -197,7 +202,7 @@ export default function App() {
   }, [capturedImage, detections]);
 
   useEffect(() => {
-    if (isCameraActive) {
+    if (isCameraActive && !isWeb) {
       startRealtimeDetection();
     } else {
       stopRealtimeDetection();
@@ -236,7 +241,7 @@ export default function App() {
           }
         }
       } catch (error) {
-        // Sessizce geç - canlı tespit hatası kritik değil
+        // Silently pass - real-time detection error is not critical
       } finally {
         isDetectingRef.current = false;
         setIsDetecting(false);
@@ -254,16 +259,21 @@ export default function App() {
   };
 
   const takePicture = async () => {
+    if (isWeb) {
+      // On web, use file picker instead
+      pickImage();
+      return;
+    }
     if (cameraRef.current) {
       try {
-        // Önce canlı tespiti durdur ve bekle
+        // First stop real-time detection and wait
         stopRealtimeDetection();
         setIsLoading(true);
 
-        // Kameranın hazır olması için kısa bir bekleme
+        // Short wait for camera to be ready
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        // Fotoğraf çek
+        // Take photo
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.8,
           base64: true,
@@ -272,17 +282,17 @@ export default function App() {
 
         if (photo && photo.uri) {
           if (!photo.base64) {
-            throw new Error('Fotoğraf verisi işlenemedi');
+            throw new Error('Photo data could not be processed');
           }
           setCapturedImage(photo.uri);
           setIsCameraActive(false);
           await detectObjects(photo.base64);
         } else {
-          throw new Error('Fotoğraf alınamadı');
+          throw new Error('Photo could not be captured');
         }
       } catch (error) {
         console.log('Take picture error:', error);
-        Alert.alert('Hata', 'Fotoğraf çekilemedi. Lütfen tekrar deneyin.');
+        Alert.alert('Error', 'Failed to take photo. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -294,7 +304,7 @@ export default function App() {
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, base64: true });
       if (!result.canceled && result.assets[0]) {
         if (!result.assets[0].base64) {
-          Alert.alert('Hata', 'Görüntü işlenemedi. Lütfen başka bir görüntü seçin.');
+          Alert.alert('Error', 'Image could not be processed. Please select another image.');
           return;
         }
         setIsLoading(true);
@@ -303,7 +313,7 @@ export default function App() {
       }
     } catch (error) {
       console.log('Pick image error:', error);
-      Alert.alert('Hata', 'Görüntü seçilemedi');
+      Alert.alert('Error', 'Failed to select image');
     } finally {
       setIsLoading(false);
     }
@@ -311,13 +321,13 @@ export default function App() {
 
   const detectObjects = async (base64Image) => {
     if (!base64Image) {
-      Alert.alert('Hata', 'Görüntü verisi bulunamadı');
+      Alert.alert('Error', 'Image data not found');
       setIsLoading(false);
       return;
     }
 
     try {
-      // Timeout ile fetch işlemi
+      // Fetch operation with timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 saniye timeout
 
@@ -331,7 +341,7 @@ export default function App() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`API hatası: ${response.status}`);
+        throw new Error(`API error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -345,9 +355,9 @@ export default function App() {
     } catch (error) {
       console.log('Detect objects error:', error);
       if (error.name === 'AbortError') {
-        Alert.alert('Zaman Aşımı', 'API yanıt vermedi. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.');
+        Alert.alert('Timeout', 'API did not respond. Please check your internet connection and try again.');
       } else {
-        Alert.alert('Bağlantı Hatası', `API bağlantısı kurulamadı.\n\nAPI URL: ${API_URL}\n\nLütfen backend servisinin çalıştığından emin olun.`);
+        Alert.alert('Connection Error', `Failed to connect to API.\n\nAPI URL: ${API_URL}\n\nPlease make sure the backend service is running.`);
       }
       setDetections([]);
       setImageSize({ width: 0, height: 0 });
@@ -365,24 +375,24 @@ export default function App() {
   const renderRealtimeBoxes = () => {
     if (realtimeDetections.length === 0 || imageSize.width === 0) return null;
 
-    // Kamera preview boyutları
-    const previewHeight = SCREEN_HEIGHT - 180; // Controls için alan
+    // Camera preview dimensions
+    const previewHeight = SCREEN_HEIGHT - 180; // Space for controls
     const previewWidth = SCREEN_WIDTH;
 
-    // Fotoğraf aspect ratio (genişlik/yükseklik)
+    // Photo aspect ratio (width/height)
     const photoAspect = imageSize.width / imageSize.height;
     const previewAspect = previewWidth / previewHeight;
 
     let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
 
-    // Kamera genellikle fill modda çalışır
+    // Camera usually works in fill mode
     if (photoAspect > previewAspect) {
-      // Fotoğraf daha geniş - yüksekliğe göre ölçekle, yanlardan kırp
+      // Photo is wider - scale by height, crop from sides
       displayHeight = previewHeight;
       displayWidth = displayHeight * photoAspect;
       offsetX = (previewWidth - displayWidth) / 2;
     } else {
-      // Fotoğraf daha uzun - genişliğe göre ölçekle, üst/alttan kırp  
+      // Photo is taller - scale by width, crop from top/bottom  
       displayWidth = previewWidth;
       displayHeight = displayWidth / photoAspect;
       offsetY = (previewHeight - displayHeight) / 2;
@@ -434,7 +444,7 @@ export default function App() {
     });
   };
 
-  // Sonuç ekranı için box hesaplaması - contain mode
+  // Box calculation for result screen - contain mode
   const getResultDisplayDimensions = () => {
     const containerWidth = SCREEN_WIDTH - scale(32);
     const availableHeight = SCREEN_HEIGHT - 180;
@@ -450,12 +460,12 @@ export default function App() {
     let displayWidth, displayHeight, offsetX = 0, offsetY = 0;
 
     if (imageAspect > containerAspect) {
-      // Görüntü daha geniş - genişliğe sığdır
+      // Image is wider - fit to width
       displayWidth = containerWidth;
       displayHeight = containerWidth / imageAspect;
       offsetY = (maxImageHeight - displayHeight) / 2;
     } else {
-      // Görüntü daha uzun - yüksekliğe sığdır
+      // Image is taller - fit to height
       displayHeight = maxImageHeight;
       displayWidth = maxImageHeight * imageAspect;
       offsetX = (containerWidth - displayWidth) / 2;
@@ -469,7 +479,7 @@ export default function App() {
 
     const { displayWidth, displayHeight } = getResultDisplayDimensions();
 
-    // Basit ölçekleme - contain mode için
+    // Simple scaling - for contain mode
     const scaleX = displayWidth / imageSize.width;
     const scaleY = displayHeight / imageSize.height;
     const borderWidth = 3;
@@ -516,31 +526,34 @@ export default function App() {
     });
   };
 
-  // Permission kontrolü - loading durumunu kısa tut
-  if (!permission) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#4A5568" />
-        <Text style={[styles.permText, { marginTop: 20 }]}>Yükleniyor...</Text>
-      </View>
-    );
+  // Permission check - keep loading state short
+  // Skip camera permission check on web
+  if (!isWeb) {
+    if (!permission) {
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#4A5568" />
+          <Text style={[styles.permText, { marginTop: 20 }]}>Loading...</Text>
+        </View>
+      );
+    }
+
+    if (!permission.granted) {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.permText}>Camera permission required</Text>
+          <Text style={[styles.permText, { fontSize: scale(14), marginTop: 8, marginBottom: 20 }]}>
+            Camera access is required for the app to work
+          </Text>
+          <TouchableOpacity style={styles.btn} onPress={requestPermission}>
+            <Text style={styles.btnText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
   }
 
-  if (!permission.granted) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.permText}>Kamera izni gerekli</Text>
-        <Text style={[styles.permText, { fontSize: scale(14), marginTop: 8, marginBottom: 20 }]}>
-          Uygulamanın çalışması için kamera erişimine ihtiyaç var
-        </Text>
-        <TouchableOpacity style={styles.btn} onPress={requestPermission}>
-          <Text style={styles.btnText}>İzin Ver</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (isCameraActive) {
+  if (isCameraActive && !isWeb) {
     const scanTranslateY = scanLineAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [0, SCREEN_HEIGHT - 200],
@@ -567,12 +580,12 @@ export default function App() {
             {isDetecting ? (
               <Animated.View style={[styles.statusBadge, styles.statusScanning, { opacity: glowAnim }]}>
                 <Animated.View style={[styles.statusDot, styles.dotActive, { transform: [{ scale: pulseAnim }] }]} />
-                <Text style={styles.statusText}>Taranıyor...</Text>
+                <Text style={styles.statusText}>Scanning...</Text>
               </Animated.View>
             ) : (
               <View style={[styles.statusBadge, styles.statusReady]}>
                 <View style={[styles.statusDot, styles.dotReady]} />
-                <Text style={styles.statusText}>Hazır</Text>
+                <Text style={styles.statusText}>Ready</Text>
               </View>
             )}
           </View>
@@ -586,7 +599,7 @@ export default function App() {
                 end={{ x: 1, y: 1 }}
                 style={styles.badgeGradient}
               >
-                <Text style={styles.badgeText}>🎯 {realtimeDetections.length} nesne tespit edildi</Text>
+                <Text style={styles.badgeText}>🎯 {realtimeDetections.length} objects detected</Text>
               </LinearGradient>
             </View>
           )}
@@ -624,7 +637,7 @@ export default function App() {
             <View style={styles.controlBtnInner}>
               <Text style={styles.controlBtnIcon}>✕</Text>
             </View>
-            <Text style={styles.controlBtnLabel}>İptal</Text>
+            <Text style={styles.controlBtnLabel}>Cancel</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.captureBtn} onPress={takePicture} disabled={isLoading}>
@@ -651,7 +664,7 @@ export default function App() {
     // getResultDisplayDimensions fonksiyonunu kullan
     const { displayWidth, displayHeight, containerWidth, maxImageHeight } = getResultDisplayDimensions();
 
-    // Tespit sayısına göre dinamik boyutlandırma
+    // Dynamic sizing based on detection count
     const detectionCount = detections.length;
     const compactMode = detectionCount > 3;
 
@@ -659,14 +672,14 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" />
         <LinearGradient colors={['#2C3E50', '#34495E', '#4A5568']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.headerCompact}>
-          <Text style={styles.headerTextCompact}>📊 Analiz Sonucu</Text>
+          <Text style={styles.headerTextCompact}>📊 Analysis Result</Text>
         </LinearGradient>
 
         <View style={styles.resultContainerFull}>
           <Animated.View style={[styles.resultInner, { opacity: fadeInAnim, transform: [{ translateY: slideUpAnim }] }]}>
             {/* Image + Summary Row */}
             <View style={styles.topSection}>
-              {/* Image Container - contain mode ile tam sığdır */}
+              {/* Image Container - fit completely with contain mode */}
               <View style={[styles.imageBoxCompact, { height: displayHeight, width: displayWidth, overflow: 'hidden' }]}>
                 <Image
                   source={{ uri: capturedImage }}
@@ -680,11 +693,11 @@ export default function App() {
               <View style={[styles.summaryInline, { backgroundColor: detections.length > 0 ? '#E8ECF1' : '#FFEBEE' }]}>
                 <Text style={styles.summaryIconSmall}>{detections.length > 0 ? '✅' : '❌'}</Text>
                 <Text style={styles.summaryTitleSmall}>
-                  {detections.length > 0 ? `${detections.length} Tespit` : 'Bulunamadı'}
+                  {detections.length > 0 ? `${detections.length} Detection${detections.length > 1 ? 's' : ''}` : 'Not Found'}
                 </Text>
                 {detections.length > 0 && (
                   <Text style={styles.summarySubSmall}>
-                    %{Math.round(detections.reduce((a, b) => a + b.confidence, 0) / detections.length * 100)} güven
+                    {Math.round(detections.reduce((a, b) => a + b.confidence, 0) / detections.length * 100)}% confidence
                   </Text>
                 )}
               </View>
@@ -695,7 +708,7 @@ export default function App() {
               {detections.length === 0 ? (
                 <View style={styles.emptyResultCompact}>
                   <Text style={styles.emptyIconSmall}>🔎</Text>
-                  <Text style={styles.emptyTextSmall}>Tanınabilir vida başlığı bulunamadı</Text>
+                  <Text style={styles.emptyTextSmall}>No recognizable screw head found</Text>
                 </View>
               ) : (
                 <View style={compactMode ? styles.resultsGrid : styles.resultsList}>
@@ -736,7 +749,7 @@ export default function App() {
                 style={styles.newBtnGradientCompact}
               >
                 <Text style={styles.newBtnIconSmall}>🔄</Text>
-                <Text style={styles.newBtnTextSmall}>Yeni Analiz</Text>
+                <Text style={styles.newBtnTextSmall}>New Analysis</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -753,9 +766,9 @@ export default function App() {
       </LinearGradient>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.home} showsVerticalScrollIndicator={false}>
         <Image source={require('./assets/logo.png')} style={styles.logoImage} resizeMode="contain" />
-        <Text style={styles.subtitle}>Vida Başlığı Tanıma</Text>
+        <Text style={styles.subtitle}>Screw Head Recognition</Text>
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Desteklenen Vida Başlığı Türleri</Text>
+          <Text style={styles.infoTitle}>Supported Screw Head Types</Text>
           <View style={styles.classGrid}>
             {Object.entries(CLASS_LABELS).map(([k, v]) => (
               <View key={k} style={[styles.classItem, { borderLeftWidth: 3, borderLeftColor: CLASS_COLORS[k] }]}>
@@ -765,17 +778,19 @@ export default function App() {
             ))}
           </View>
         </View>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => setIsCameraActive(true)}>
-          <Text style={styles.primaryBtnText}>📷 Kamera Aç</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={pickImage}>
-          <Text style={styles.secondaryBtnText}>🖼️ Galeriden Seç</Text>
+        {!isWeb && (
+          <TouchableOpacity style={styles.primaryBtn} onPress={() => setIsCameraActive(true)}>
+            <Text style={styles.primaryBtnText}>📷 Open Camera</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={[styles.secondaryBtn, isWeb && styles.primaryBtn]} onPress={pickImage}>
+          <Text style={styles.secondaryBtnText}>🖼️ {isWeb ? 'Select Image' : 'Select from Gallery'}</Text>
         </TouchableOpacity>
       </ScrollView>
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#4A5568" />
-          <Text style={styles.loadingText}>Analiz ediliyor...</Text>
+          <Text style={styles.loadingText}>Analyzing...</Text>
         </View>
       )}
     </SafeAreaView>
