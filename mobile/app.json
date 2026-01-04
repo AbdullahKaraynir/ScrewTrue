@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "ScrewTrue",
+    "slug": "screwtrue",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.screwtrue.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.screwtrue.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "extra": {
+      "apiUrl": "https://your-api-url.herokuapp.com",
+      "apiUrlLocal": "http://localhost:8000",
+      "eas": {
+        "projectId": "f8d32854-5dd2-462d-b0d6-6976c24dd1ce"
+      }
+    },
+    "owner": "karaynirs-organization"
+  }
+}
