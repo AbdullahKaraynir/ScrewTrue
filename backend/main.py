@@ -58,18 +58,35 @@ CLASS_LABELS_TR = {
     "triangle": "Triangle",
 }
 
-# Roboflow API Configuration
-ROBOFLOW_API_URL = "https://serverless.roboflow.com/dataminingproject-avr2o/2"
-ROBOFLOW_API_KEY = "rSNcCctYlXx2bkMecwZk"
+# Roboflow API Configuration - Model 1 (Phillips/Pozidriv)
+MODEL_1_URL = "https://serverless.roboflow.com/dataminingproject-avr2o/2"
+MODEL_1_API_KEY = "rSNcCctYlXx2bkMecwZk"
+MODEL_1_ALLOWED = ["Phillips", "Pozidriv"]
+MODEL_1_THRESHOLD = 0.65
+
+# Roboflow API Configuration - Model 2 (Other screw types)
+MODEL_2_URL = "https://serverless.roboflow.com/dataminingproject-avr2o/5"
+MODEL_2_API_KEY = "rSNcCctYlXx2bkMecwZk"
+MODEL_2_ALLOWED = [
+    "Torx",
+    "Hex/Allen",
+    "Slotted",
+    "Security Torx",
+    "Pentalobe",
+    "Tri-wing",
+    "Spanner",
+    "Triangle"
+]
+MODEL_2_THRESHOLD = 0.55
 
 
-def call_roboflow_api(image_base64: str, confidence: float = 0.25) -> dict:
+def call_roboflow_api(image_base64: str, api_url: str, api_key: str) -> dict:
     """
     Roboflow API'sine goruntu gonder ve sonuc al
     """
     try:
         # Roboflow API endpoint - API key query parameter olarak
-        url = f"{ROBOFLOW_API_URL}?api_key={ROBOFLOW_API_KEY}"
+        url = f"{api_url}?api_key={api_key}"
         
         # Base64 header'ini kaldir (varsa)
         if "," in image_base64:
@@ -101,95 +118,212 @@ def call_roboflow_api(image_base64: str, confidence: float = 0.25) -> dict:
         raise Exception(f"Roboflow API hatasi: {str(e)}")
 
 
-def convert_roboflow_to_detections(roboflow_response: dict, confidence_threshold: float = 0.25) -> List[Dict[str, Any]]:
+def handle_model1_response(predictions: List[Dict[str, Any]], image_width: int, image_height: int) -> Dict[str, Any]:
     """
-    Roboflow API yanitini uygulama formatina donustur
+    Model 1 sonucunu filtrele (Phillips/Pozidriv)
     """
-    detections = []
-    
-    if "predictions" not in roboflow_response:
-        return detections
-    
-    predictions = roboflow_response["predictions"]
-    image_width = roboflow_response.get("image", {}).get("width", 0)
-    image_height = roboflow_response.get("image", {}).get("height", 0)
-    
     for pred in predictions:
+        pred_class = pred.get("class", "")
         pred_confidence = pred.get("confidence", 0.0)
         
-        # Confidence threshold kontrolu
-        if pred_confidence < confidence_threshold:
-            continue
+        # Debug log
+        print(f"[DEBUG] Model 1 - class: {pred_class}, conf: {pred_confidence}")
         
-        # Class adini al
-        class_name = pred.get("class", "").lower()
+        # Allowed sınıf ve threshold kontrolü (case-insensitive)
+        pred_class_normalized = pred_class.strip()
+        is_allowed = any(allowed.lower() == pred_class_normalized.lower() for allowed in MODEL_1_ALLOWED)
         
-        # Class adini normalize et (Roboflow'dan gelen class adini CLASS_NAMES ile eslestir)
-        class_name_mapped = class_name
-        if class_name not in CLASS_NAMES:
-            # Benzer class adlarini bul
-            for cn in CLASS_NAMES:
-                if cn in class_name or class_name in cn:
-                    class_name_mapped = cn
-                    break
-            # Bulunamazsa orijinal adi kullan
-            if class_name_mapped not in CLASS_NAMES:
-                class_name_mapped = class_name
-        
-        # Bounding box
-        x_center = pred.get("x", 0)
-        y_center = pred.get("y", 0)
-        width = pred.get("width", 0)
-        height = pred.get("height", 0)
-        
-        # Center format -> Corner format
-        x1 = x_center - width / 2
-        y1 = y_center - height / 2
-        x2 = x_center + width / 2
-        y2 = y_center + height / 2
-        
-        # Sinirlari kontrol et
-        x1 = max(0, min(int(x1), image_width))
-        y1 = max(0, min(int(y1), image_height))
-        x2 = max(0, min(int(x2), image_width))
-        y2 = max(0, min(int(y2), image_height))
-        
-        # Class ID bul
-        class_id = CLASS_NAMES.index(class_name_mapped) if class_name_mapped in CLASS_NAMES else 0
-        
-        detections.append({
-            "class_id": class_id,
-            "class_name": class_name_mapped,
-            "class_label": CLASS_LABELS_TR.get(class_name_mapped, class_name_mapped),
-            "confidence": round(pred_confidence, 3),
-            "bbox": {
-                "x1": x1,
-                "y1": y1,
-                "x2": x2,
-                "y2": y2,
-            },
-            "color": CLASS_COLORS.get(class_name_mapped, "#FFFFFF"),
-        })
+        if is_allowed and pred_confidence >= MODEL_1_THRESHOLD:
+            # Class adını normalize et
+            class_name = pred_class_normalized.lower()
+            if "phillips" in class_name:
+                class_name = "phillips"
+            elif "pozidriv" in class_name:
+                class_name = "pozidriv"
+            
+            # Bounding box
+            x_center = pred.get("x", 0)
+            y_center = pred.get("y", 0)
+            width = pred.get("width", 0)
+            height = pred.get("height", 0)
+            
+            # Center format -> Corner format
+            x1 = x_center - width / 2
+            y1 = y_center - height / 2
+            x2 = x_center + width / 2
+            y2 = y_center + height / 2
+            
+            # Sinirlari kontrol et
+            x1 = max(0, min(int(x1), image_width))
+            y1 = max(0, min(int(y1), image_height))
+            x2 = max(0, min(int(x2), image_width))
+            y2 = max(0, min(int(y2), image_height))
+            
+            # Class ID bul
+            class_id = CLASS_NAMES.index(class_name) if class_name in CLASS_NAMES else 0
+            
+            result = {
+                "class_id": class_id,
+                "class_name": class_name,
+                "class_label": CLASS_LABELS_TR.get(class_name, class_name),
+                "confidence": round(pred_confidence, 3),
+                "bbox": {
+                    "x1": x1,
+                    "y1": y1,
+                    "x2": x2,
+                    "y2": y2,
+                },
+                "color": CLASS_COLORS.get(class_name, "#FFFFFF"),
+                "model": 1
+            }
+            
+            print(f"[DEBUG] Model 1 ACCEPTED - class: {result['class_label']}, conf: {result['confidence']}")
+            return result
     
-    return detections
+    return None
+
+
+def handle_model2_response(predictions: List[Dict[str, Any]], image_width: int, image_height: int) -> Dict[str, Any]:
+    """
+    Model 2 sonucunu filtrele (Diğer vida tipleri)
+    """
+    for pred in predictions:
+        pred_class = pred.get("class", "")
+        pred_confidence = pred.get("confidence", 0.0)
+        
+        # Debug log
+        print(f"[DEBUG] Model 2 - class: {pred_class}, conf: {pred_confidence}")
+        
+        # Allowed sınıf ve threshold kontrolü (case-insensitive)
+        pred_class_normalized = pred_class.strip()
+        is_allowed = any(allowed.lower() == pred_class_normalized.lower() for allowed in MODEL_2_ALLOWED)
+        
+        if is_allowed and pred_confidence >= MODEL_2_THRESHOLD:
+            # Class adını normalize et
+            class_name = pred_class_normalized.lower()
+            # Mapping - Roboflow'dan gelen class isimlerini CLASS_NAMES formatına çevir
+            if "torx" in class_name:
+                if "security" in class_name:
+                    class_name = "security_torx"
+                else:
+                    class_name = "torx"
+            elif "hex" in class_name or "allen" in class_name:
+                class_name = "hex_allen"
+            elif "slotted" in class_name:
+                class_name = "slotted"
+            elif "pentalobe" in class_name:
+                class_name = "pentalobe"
+            elif "tri" in class_name and "wing" in class_name:
+                class_name = "tri_wing"
+            elif "spanner" in class_name:
+                class_name = "spanner"
+            elif "triangle" in class_name:
+                class_name = "triangle"
+            
+            # Bounding box
+            x_center = pred.get("x", 0)
+            y_center = pred.get("y", 0)
+            width = pred.get("width", 0)
+            height = pred.get("height", 0)
+            
+            # Center format -> Corner format
+            x1 = x_center - width / 2
+            y1 = y_center - height / 2
+            x2 = x_center + width / 2
+            y2 = y_center + height / 2
+            
+            # Sinirlari kontrol et
+            x1 = max(0, min(int(x1), image_width))
+            y1 = max(0, min(int(y1), image_height))
+            x2 = max(0, min(int(x2), image_width))
+            y2 = max(0, min(int(y2), image_height))
+            
+            # Class ID bul
+            class_id = CLASS_NAMES.index(class_name) if class_name in CLASS_NAMES else 0
+            
+            result = {
+                "class_id": class_id,
+                "class_name": class_name,
+                "class_label": CLASS_LABELS_TR.get(class_name, class_name),
+                "confidence": round(pred_confidence, 3),
+                "bbox": {
+                    "x1": x1,
+                    "y1": y1,
+                    "x2": x2,
+                    "y2": y2,
+                },
+                "color": CLASS_COLORS.get(class_name, "#FFFFFF"),
+                "model": 2
+            }
+            
+            print(f"[DEBUG] Model 2 ACCEPTED - class: {result['class_label']}, conf: {result['confidence']}")
+            return result
+    
+    return None
+
+
+
+
+def detect_screw_cascade(image_base64: str, image_width: int, image_height: int) -> Dict[str, Any]:
+    """
+    Cascade sistem: Önce Model 1, sonra Model 2
+    """
+    # ADIM 3 - MODEL 1 İÇİN REQUEST
+    print("[DEBUG] Calling Model 1 (Phillips/Pozidriv)...")
+    try:
+        res1 = call_roboflow_api(image_base64, MODEL_1_URL, MODEL_1_API_KEY)
+        predictions1 = res1.get("predictions", [])
+        
+        # Image boyutlarını response'tan al (varsa)
+        img_w = res1.get("image", {}).get("width", image_width)
+        img_h = res1.get("image", {}).get("height", image_height)
+        
+        # ADIM 4 - MODEL 1 SONUCUNU FİLTRELE
+        m1_result = handle_model1_response(predictions1, img_w, img_h)
+        if m1_result:
+            return {"model": 1, "result": m1_result}
+    except Exception as e:
+        print(f"[DEBUG] Model 1 error: {str(e)}")
+    
+    # ADIM 5 - MODEL 2'YE GEÇ
+    print("[DEBUG] Model 1 no result, calling Model 2...")
+    try:
+        res2 = call_roboflow_api(image_base64, MODEL_2_URL, MODEL_2_API_KEY)
+        predictions2 = res2.get("predictions", [])
+        
+        # Image boyutlarını response'tan al (varsa)
+        img_w = res2.get("image", {}).get("width", image_width)
+        img_h = res2.get("image", {}).get("height", image_height)
+        
+        # ADIM 5 - MODEL 2 SONUCUNU FİLTRELE
+        m2_result = handle_model2_response(predictions2, img_w, img_h)
+        if m2_result:
+            return {"model": 2, "result": m2_result}
+    except Exception as e:
+        print(f"[DEBUG] Model 2 error: {str(e)}")
+    
+    print("[DEBUG] No result from both models")
+    return None
 
 
 def run_inference(image: np.ndarray, confidence: float = 0.25) -> tuple:
     """
-    Roboflow API ile inference yap
+    Roboflow API ile inference yap (CASCADE SİSTEM)
     """
     # Goruntuyu base64'e donustur
     _, buffer = cv2.imencode('.jpg', image)
     image_base64 = base64.b64encode(buffer).decode('utf-8')
     
-    # Roboflow API'ye gonder
-    roboflow_response = call_roboflow_api(image_base64, confidence)
-    
-    # Response'u uygulama formatina donustur
-    detections = convert_roboflow_to_detections(roboflow_response, confidence)
-    
     # Image boyutlari
     image_height, image_width = image.shape[:2]
+    
+    # Cascade sistem kullan
+    cascade_result = detect_screw_cascade(image_base64, image_width, image_height)
+    
+    # Sonucu formatla
+    detections = []
+    if cascade_result and cascade_result.get("result"):
+        detections.append(cascade_result["result"])
     
     return detections, image_width, image_height
 
@@ -197,7 +331,9 @@ def run_inference(image: np.ndarray, confidence: float = 0.25) -> tuple:
 @app.on_event("startup")
 async def startup_event():
     """Uygulama baslagicinda kontrol"""
-    print(f"[OK] Roboflow API hazir: {ROBOFLOW_API_URL}")
+    print(f"[OK] Model 1 hazir: {MODEL_1_URL}")
+    print(f"[OK] Model 2 hazir: {MODEL_2_URL}")
+    print(f"[OK] Cascade sistem aktif")
 
 
 @app.get("/")
@@ -217,8 +353,13 @@ async def health_check():
     return {
         "status": "healthy",
         "api_configured": True,
-        "api_type": "Roboflow",
-        "api_url": ROBOFLOW_API_URL,
+        "api_type": "Roboflow Cascade",
+        "model_1_url": MODEL_1_URL,
+        "model_2_url": MODEL_2_URL,
+        "model_1_allowed": MODEL_1_ALLOWED,
+        "model_1_threshold": MODEL_1_THRESHOLD,
+        "model_2_allowed": MODEL_2_ALLOWED,
+        "model_2_threshold": MODEL_2_THRESHOLD,
         "classes": CLASS_NAMES,
     }
 
