@@ -2,7 +2,7 @@
 
 ScrewTrue, yapay zeka destekli bir vida başlığı tanıma ve sınıflandırma sistemidir. Mobil uygulama ve REST API ile çalışan bu sistem, Roboflow'un cascade model mimarisi kullanarak 10 farklı vida tipini yüksek doğrulukla tespit edebilir.
 
-## 📋 İçindekiler
+##  İçindekiler
 
 - [Özellikler](#-özellikler)
 - [Teknoloji Stack](#-teknoloji-stack)
@@ -18,18 +18,18 @@ ScrewTrue, yapay zeka destekli bir vida başlığı tanıma ve sınıflandırma 
 - [Deployment](#-deployment)
 - [Geliştirme](#-geliştirme)
 
-## ✨ Özellikler
+##  Özellikler
 
-- 🔍 **10 Farklı Vida Tipi Tanıma**: Phillips, Pozidriv, Torx, Hex/Allen, Slotted, Security Torx, Pentalobe, Tri-wing, Spanner, Triangle
-- 🎯 **Cascade Model Sistemi**: İki aşamalı model yapısı ile optimize edilmiş doğruluk
-- 📱 **Cross-Platform Mobil Uygulama**: iOS ve Android desteği
-- 📸 **Gerçek Zamanlı Tespit**: Canlı kamera akışında anlık tespit
-- 🖼️ **Galeri Desteği**: Mevcut fotoğraflardan tespit yapma
-- 🎨 **Renk Kodlu Sınıflandırma**: Her vida tipi için özel renk gösterimi
-- 📊 **Güven Skoru Gösterimi**: Tespit doğruluğunu görselleştirme
-- 🌐 **RESTful API**: Kolay entegrasyon için standart API yapısı
+-  **10 Farklı Vida Tipi Tanıma**: Phillips, Pozidriv, Torx, Hex/Allen, Slotted, Security Torx, Pentalobe, Tri-wing, Spanner, Triangle
+-  **Cascade Model Sistemi**: İki aşamalı model yapısı ile optimize edilmiş doğruluk
+-  **Cross-Platform Mobil Uygulama**: iOS ve Android desteği
+-  **Gerçek Zamanlı Tespit**: Canlı kamera akışında anlık tespit
+-  **Galeri Desteği**: Mevcut fotoğraflardan tespit yapma
+-  **Renk Kodlu Sınıflandırma**: Her vida tipi için özel renk gösterimi
+-  **Güven Skoru Gösterimi**: Tespit doğruluğunu görselleştirme
+-  **RESTful API**: Kolay entegrasyon için standart API yapısı
 
-## 🛠️ Teknoloji Stack
+##  Teknoloji Stack
 
 ### Backend
 - **Framework**: FastAPI 0.104.1
@@ -44,7 +44,7 @@ ScrewTrue, yapay zeka destekli bir vida başlığı tanıma ve sınıflandırma 
 - **Image Picker**: expo-image-picker
 - **UI**: React Native Components + Linear Gradient
 
-## 📁 Proje Yapısı
+##  Proje Yapısı
 
 ```
 ScrewTrue-main/
@@ -66,7 +66,7 @@ ScrewTrue-main/
 └── README.md             # Bu dosya
 ```
 
-## 🚀 Kurulum
+##  Kurulum
 
 ### Backend Kurulumu
 
@@ -158,7 +158,7 @@ npm install
 
 **Not**: Development modunda uygulama otomatik olarak `localhost:8000` kullanır. Production için gerçek API URL'inizi ekleyin.
 
-## ▶️ Çalıştırma
+##  Çalıştırma
 
 ### Backend'i Çalıştırma
 
@@ -244,7 +244,7 @@ npm run ios
 npm run web
 ```
 
-## 📚 API Dokümantasyonu
+##  API Dokümantasyonu
 
 ### Base URL
 ```
@@ -386,7 +386,7 @@ Interaktif API dokümantasyonu için:
 http://localhost:8000/docs
 ```
 
-## 🔄 Cascade Model Sistemi
+##  Cascade Model Sistemi
 
 ScrewTrue, iki aşamalı bir cascade model sistemi kullanır:
 
@@ -421,12 +421,12 @@ ScrewTrue, iki aşamalı bir cascade model sistemi kullanır:
 ```
 
 ### Avantajlar
-- ⚡ **Hızlı Tespit**: Yaygın vida tipleri (Phillips/Pozidriv) için optimize edilmiş
-- 🎯 **Yüksek Doğruluk**: Her model kendi uzmanlık alanında optimize edilmiş
-- 💰 **Maliyet Optimizasyonu**: Gerekli durumlarda sadece Model 2 çağrılır
-- 🔒 **Güvenilirlik**: İki model katmanı ile daha güvenilir sonuçlar
+-  **Hızlı Tespit**: Yaygın vida tipleri (Phillips/Pozidriv) için optimize edilmiş
+-  **Yüksek Doğruluk**: Her model kendi uzmanlık alanında optimize edilmiş
+-  **Maliyet Optimizasyonu**: Gerekli durumlarda sadece Model 2 çağrılır
+-  **Güvenilirlik**: İki model katmanı ile daha güvenilir sonuçlar
 
-## 🚢 Deployment
+## Deployment
 
 ### Backend Deployment
 
@@ -528,7 +528,7 @@ curl -X POST "http://localhost:8000/detect" \
 - Expo Go ile development test
 - EAS Build ile production test
 
-## 📝 Notlar
+##  Notlar
 
 - Backend default olarak `localhost:8000` portunda çalışır
 - Mobil uygulama development modunda otomatik olarak localhost'u bulur
@@ -536,7 +536,7 @@ curl -X POST "http://localhost:8000/detect" \
 - Cascade sistem sayesinde aynı frame'de iki sonuç asla gösterilmez
 - Model threshold'ları `main.py` içinde ayarlanabilir
 
-## 🤝 Katkıda Bulunma
+##  Katkıda Bulunma
 
 1. Fork yapın
 2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
@@ -544,15 +544,15 @@ curl -X POST "http://localhost:8000/detect" \
 4. Push yapın (`git push origin feature/amazing-feature`)
 5. Pull Request açın
 
-## 📄 Lisans
+##  Lisans
 
 Bu proje özel bir lisans altındadır.
 
-## 👥 İletişim
+##  İletişim
 
 Sorularınız için issue açabilir veya repository'yi inceleyebilirsiniz.
 
 ---
 
-**ScrewTrue** - Akıllı Vida Tanıma Sistemi 🔩✨
+**ScrewTrue** - Akıllı Vida Tanıma Sistemi 
 
