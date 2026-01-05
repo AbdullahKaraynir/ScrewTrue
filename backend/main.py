@@ -68,6 +68,8 @@ MODEL_1_THRESHOLD = 0.65
 MODEL_2_URL = "https://serverless.roboflow.com/dataminingproject-avr2o/5"
 MODEL_2_API_KEY = "rSNcCctYlXx2bkMecwZk"
 MODEL_2_ALLOWED = [
+    "Phillips",
+    "Pozidriv",
     "Torx",
     "Hex/Allen",
     "Slotted",
@@ -202,7 +204,11 @@ def handle_model2_response(predictions: List[Dict[str, Any]], image_width: int, 
             # Class adını normalize et
             class_name = pred_class_normalized.lower()
             # Mapping - Roboflow'dan gelen class isimlerini CLASS_NAMES formatına çevir
-            if "torx" in class_name:
+            if "phillips" in class_name:
+                class_name = "phillips"
+            elif "pozidriv" in class_name:
+                class_name = "pozidriv"
+            elif "torx" in class_name:
                 if "security" in class_name:
                     class_name = "security_torx"
                 else:
