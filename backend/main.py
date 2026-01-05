@@ -62,7 +62,7 @@ CLASS_LABELS_TR = {
 MODEL_1_URL = "https://serverless.roboflow.com/dataminingproject-avr2o/2"
 MODEL_1_API_KEY = "rSNcCctYlXx2bkMecwZk"
 MODEL_1_ALLOWED = ["Phillips", "Pozidriv"]
-MODEL_1_THRESHOLD = 0.65
+MODEL_1_THRESHOLD = 0.45
 
 # Roboflow API Configuration - Model 2 (Other screw types)
 MODEL_2_URL = "https://serverless.roboflow.com/dataminingproject-avr2o/5"
@@ -79,7 +79,7 @@ MODEL_2_ALLOWED = [
     "Spanner",
     "Triangle"
 ]
-MODEL_2_THRESHOLD = 0.55
+MODEL_2_THRESHOLD = 0.40
 
 
 def call_roboflow_api(image_base64: str, api_url: str, api_key: str) -> dict:
